@@ -1,0 +1,41 @@
+# HOLO-GHOST - The Digital Holy Ghost
+# =====================================
+
+# Core
+pynput>=1.7.0             # Cross-platform input monitoring
+keyboard>=0.13.5          # Low-level keyboard hooks (Windows)
+mouse>=0.7.1              # Low-level mouse hooks (Windows)
+
+# LLM Integration
+openai>=1.0.0             # OpenAI-compatible API client
+vllm>=0.4.0               # Local LLM serving (optional, for GPU)
+
+# Provenance Chain
+hashlib                   # Built-in, merkle hashing
+
+# Screen Recording
+mss>=9.0.0                # Fast cross-platform screenshots
+opencv-python>=4.8.0      # Video encoding
+numpy>=1.24.0             # Array operations
+
+# API Server
+fastapi>=0.109.0          # REST API
+uvicorn>=0.27.0           # ASGI server
+websockets>=12.0          # WebSocket support
+
+# Game Detection
+psutil>=5.9.0             # Process monitoring
+pywin32>=306              # Windows API (game window detection)
+
+# Configuration
+pyyaml>=6.0.0             # YAML config files
+pydantic>=2.0.0           # Config validation
+python-dotenv>=1.0.0      # Environment variables
+
+# Utilities
+aiofiles>=23.0.0          # Async file operations
+rich>=13.0.0              # Beautiful console output
+click>=8.0.0              # CLI interface
+
+# Optional: Local LLM (for non-vLLM setups)
+# llama-cpp-python>=0.2.0  # Local Llama inference
