@@ -17,11 +17,17 @@ class Event:
     data: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
     
+    # Lattice Hooks (Cascade-Lattice Integration)
+    lattice_id: Optional[str] = None
+    ancestry: List[str] = field(default_factory=list)
+    
     def to_dict(self) -> dict:
         return {
             "type": self.type,
             "data": self.data,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
+            "lattice_id": self.lattice_id,
+            "ancestry": self.ancestry
         }
 
 

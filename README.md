@@ -298,6 +298,72 @@ ghost.compare("my_aim", "pro_player_dataset")
 
 ---
 
+## 🕸️ Cascade Lattice & Performance Identities
+
+HOLO-GHOST integrates the **Cascade Lattice** concept to move beyond flat event logs into multi-dimensional causal graphs.
+
+### Core Concepts
+
+*   **Causal Lineage:** Every input event is not just a point in time, but a node in a lattice. It remembers its ancestors (what led to this action) and its descendants.
+*   **Performance Identities:** By watching the "decision geometry" of a player (velocity curves, spatial bias, timing priors), the Ghost can capture a unique signature—a Performance Identity.
+*   **Game State Bridge:** Raw inputs are bound to real-time gameplay context (e.g., CS2 map, round, player position, objectives), turning "how" into "why".
+*   **Identity Cloning:** These identities can be exported, compared, or even used to initialize AI behaviors that mimic a specific player's mannerisms.
+*   **Structural Darwinism:** The lattice supports pruning, where weak causal links collapse and strong ones persist, allowing meaning to emerge from raw interaction density.
+
+### Example: Context-Aware Skills
+
+```python
+# The Ghost captures intent by binding game state to input
+identity.add_event(
+    input_event,
+    game_context={
+        "game": "cs2",
+        "map": "de_dust2",
+        "game_phase": "postplant",
+        "objective": "defend_bomb",
+        "player_position": (2847, -1203, 0)
+    }
+)
+```
+
+### Example: Tracing Lineage
+
+```python
+# Trace the causal ancestry of an event
+lineage = ghost.lattice.get_lineage(event.lattice_id, depth=10)
+
+for node in lineage:
+    print(f"Ancestral Node: {node.id} | Type: {node.type}")
+```
+
+### Example: Comparing Identities
+
+```python
+# Compare current session against a pro player profile
+pro_identity = PerformanceIdentity.load("pro_shroud.json")
+similarity = ghost.identity.compare(pro_identity)
+
+print(f"Match Confidence: {similarity * 100}%")
+```
+
+### Example: StarCraft II Replay Analysis
+
+HOLO-GHOST can analyze real StarCraft II replays to extract performance identities from professional matches. It uses a **Data Pool** system to fetch replays from public repositories or local directories.
+
+```python
+# Fetch real replays from the pool
+replays = ghost.fetch_starcraft_replays()
+
+# Analyze a pro replay
+if replays:
+    session = ghost.analyze_starcraft_replay(replays[0])
+    
+    for player in session['players']:
+        print(f"Player: {player['name']} | Identity: {player['identity'].player_id}")
+```
+
+---
+
 ## 📜 License
 
 MIT - Use it, extend it, make it your own.

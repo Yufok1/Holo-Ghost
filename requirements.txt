@@ -36,6 +36,9 @@ python-dotenv>=1.0.0      # Environment variables
 aiofiles>=23.0.0          # Async file operations
 rich>=13.0.0              # Beautiful console output
 click>=8.0.0              # CLI interface
+sc2reader>=1.8.0          # StarCraft II replay parsing
+mpyq>=0.2.5               # MPQ archive parsing (for SC2)
+requests>=2.31.0          # HTTP requests for data pool
 
 # Optional: Local LLM (for non-vLLM setups)
 # llama-cpp-python>=0.2.0  # Local Llama inference

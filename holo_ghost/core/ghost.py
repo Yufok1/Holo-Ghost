@@ -50,6 +50,7 @@ class InputSnapshot:
     # Context
     active_window: str = ""
     active_game: Optional[str] = None
+    game_state: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> dict:
         return {
@@ -70,6 +71,7 @@ class InputSnapshot:
             "context": {
                 "window": self.active_window,
                 "game": self.active_game,
+                "state": self.game_state
             }
         }
 
@@ -106,6 +108,15 @@ class HoloGhost:
         
         # Event system
         self.events = EventBus()
+        
+        # Game State Bridge
+        self._game_bridge: Optional[Any] = None
+        
+        # Cascade Lattice (Causality & Identity)
+        from ..lattice.core import CausalLattice
+        from ..lattice.identity import PerformanceIdentity
+        self.lattice = CausalLattice()
+        self.identity = PerformanceIdentity(player_id="default_player")
         
         # Components (lazy loaded)
         self._input_observer = None
@@ -205,6 +216,20 @@ class HoloGhost:
             known_games=self.config.games.known_games
         )
         
+        # Game Bridge (CS2 by default for MVP)
+        from ..game.adapters.cs2_adapter import CS2Adapter
+        self._game_bridge = CS2Adapter()
+
+        # SC2 Parser
+        from ..games.starcraft.replay_parser import SC2ReplayParser
+        self._sc2_parser = SC2ReplayParser()
+        
+        # SC2 Data Pool
+        from ..games.starcraft.data_pool import SC2DataPool
+        self._sc2_data_pool = SC2DataPool(
+            download_dir=self.config.starcraft.replay_dir
+        )
+        
         # Provenance chain
         from ..provenance.chain import ProvenanceChain
         self._provenance_chain = ProvenanceChain(
@@ -217,7 +242,9 @@ class HoloGhost:
             self._llm_engine = LLMEngine(
                 engine_type=self.config.llm.engine,
                 model=self.config.llm.model,
-                url=self.config.llm.url
+                url=self.config.llm.url,
+                api_key=self.config.llm.api_key,
+                light_mode=self.config.llm.light_mode
             )
             await self._llm_engine.connect()
         
@@ -241,6 +268,26 @@ class HoloGhost:
         snapshot.active_window = self._game_detector.active_window if self._game_detector else ""
         snapshot.active_game = self._game_detector.active_game if self._game_detector else None
         
+        # Add high-level game context if available
+        if self._game_bridge:
+            # Note: snapshot is synchronous, bridge might be async. 
+            # We use the last known state from the bridge.
+            snapshot.game_state = self._game_bridge.current_state.to_dict()
+        
+        # 1. Update Performance Identity
+        self.identity.update(snapshot.to_dict())
+        
+        # 2. Add to Causal Lattice
+        # We link this input to the previous one to create a basic temporal lineage
+        last_event = self.events.get_history(limit=1)
+        parents = [last_event[0].lattice_id] if last_event and last_event[0].lattice_id else []
+        
+        node = self.lattice.add_node(
+            node_type="input_snapshot",
+            data=snapshot.to_dict(),
+            parents=parents
+        )
+        
         # Add to buffer
         self._input_buffer.append(snapshot)
         
@@ -252,8 +299,11 @@ class HoloGhost:
         if self._provenance_chain:
             self._provenance_chain.record(snapshot.to_dict())
         
-        # Emit event
-        self.events.emit(Event("input", snapshot.to_dict()))
+        # Emit event with lattice linkage
+        event = Event("input", snapshot.to_dict())
+        event.lattice_id = node.id
+        event.ancestry = parents
+        self.events.emit(event)
         
         # Quick pattern checks (non-LLM)
         self._check_quick_patterns(snapshot)
@@ -265,7 +315,11 @@ class HoloGhost:
             if self._game_detector:
                 self._game_detector.update()
             
-            await asyncio.sleep(0.1)  # 10Hz game detection update
+            # Update game bridge state
+            if self._game_bridge:
+                await self._game_bridge.update()
+            
+            await asyncio.sleep(0.1)  # 10Hz game detection & bridge update
     
     async def _analysis_loop(self):
         """Slower analysis loop using LLM."""
@@ -420,6 +474,26 @@ class HoloGhost:
         inputs = [s for s in self._input_buffer if s.timestamp > cutoff]
         
         return [s.to_dict() for s in inputs]
+
+    def analyze_starcraft_replay(self, replay_path: str):
+        """Analyze a StarCraft II replay file."""
+        if not hasattr(self, '_sc2_parser') or self._sc2_parser is None:
+            from ..games.starcraft.replay_parser import SC2ReplayParser
+            self._sc2_parser = SC2ReplayParser()
+            
+        return self._sc2_parser.parse(replay_path)
+
+    def fetch_starcraft_replays(self, repo_url: Optional[str] = None) -> List[str]:
+        """Fetch real replays from the data pool."""
+        if not hasattr(self, '_sc2_data_pool') or self._sc2_data_pool is None:
+            from ..games.starcraft.data_pool import SC2DataPool
+            self._sc2_data_pool = SC2DataPool(
+                download_dir=self.config.starcraft.replay_dir
+            )
+            
+        if repo_url:
+            return self._sc2_data_pool.fetch_from_repo(repo_url)
+        return self._sc2_data_pool.download_sample_pack()
     
     def get_flags(self, last_seconds: float = 300) -> List[dict]:
         """Get recent flags."""

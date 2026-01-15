@@ -178,7 +178,7 @@ class InputObserver:
             
             # Create snapshot
             if self.on_input:
-                from .observer import InputSnapshot
+                from ..core.ghost import InputSnapshot
                 snapshot = self._create_snapshot()
                 self.on_input(snapshot)
             

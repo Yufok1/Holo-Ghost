@@ -37,10 +37,11 @@ class InputConfig:
 class LLMConfig:
     """LLM engine configuration."""
     enabled: bool = True
-    engine: str = "vllm"  # "vllm", "local", "openai"
-    model: str = "mistralai/Mistral-Nemo-Instruct-2407"
+    engine: str = "local"  # "vllm", "local", "openai"
+    model: str = "phi-3-mini-4k-instruct" # Default to a smaller, potato-friendly model
     url: str = "http://localhost:8000/v1"
     api_key: Optional[str] = None
+    light_mode: bool = True # New: Enable for lower-end hardware
 
 
 @dataclass
@@ -83,6 +84,10 @@ class GamesConfig:
         "league of legends.exe",
         "dota2.exe",
         
+        # RTS
+        "sc2.exe",
+        "starcraft ii.exe",
+        
         # Other competitive
         "rocketleague.exe",
         "osu!.exe",
@@ -90,12 +95,10 @@ class GamesConfig:
 
 
 @dataclass
-class APIConfig:
-    """API server configuration."""
-    enabled: bool = True
-    host: str = "127.0.0.1"
-    port: int = 7777
-    websocket_enabled: bool = True
+class StarCraftConfig:
+    """StarCraft II specific configuration."""
+    replay_dir: str = "~/Documents/StarCraft II/Accounts"
+    sc2replaystats_api_key: Optional[str] = None
 
 
 @dataclass
@@ -111,6 +114,7 @@ class Config:
     provenance: ProvenanceConfig = field(default_factory=ProvenanceConfig)
     recorder: RecorderConfig = field(default_factory=RecorderConfig)
     games: GamesConfig = field(default_factory=GamesConfig)
+    starcraft: StarCraftConfig = field(default_factory=StarCraftConfig)
     api: APIConfig = field(default_factory=APIConfig)
     
     @classmethod
@@ -163,6 +167,9 @@ class Config:
         
         if "games" in data:
             config.games = GamesConfig(**data["games"])
+        
+        if "starcraft" in data:
+            config.starcraft = StarCraftConfig(**data["starcraft"])
         
         if "api" in data:
             config.api = APIConfig(**data["api"])
@@ -218,6 +225,10 @@ class Config:
             "games": {
                 "auto_detect": self.games.auto_detect,
                 "known_games": self.games.known_games,
+            },
+            "starcraft": {
+                "replay_dir": self.starcraft.replay_dir,
+                "sc2replaystats_api_key": self.starcraft.sc2replaystats_api_key,
             },
             "api": {
                 "enabled": self.api.enabled,

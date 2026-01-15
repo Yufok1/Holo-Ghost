@@ -78,6 +78,7 @@ class LLMEngine:
         model: str = "mistralai/Mistral-Nemo-Instruct-2407",
         url: str = "http://localhost:8000/v1",
         api_key: Optional[str] = None,
+        light_mode: bool = False,
     ):
         """
         Initialize LLM engine.
@@ -87,17 +88,24 @@ class LLMEngine:
             model: Model identifier
             url: API URL (for vLLM or custom endpoint)
             api_key: API key (for OpenAI)
+            light_mode: Whether to optimize for low-end hardware
         """
         self.engine_type = engine_type
         self.model = model
         self.url = url
         self.api_key = api_key or "not-needed"
+        self.light_mode = light_mode
         
         self._client: Optional[AsyncOpenAI] = None
         self._connected = False
-    
+
     async def connect(self) -> bool:
         """Connect to LLM backend."""
+        # If engine is 'local' and light_mode is enabled, we could initialize llama-cpp here.
+        # For now, we'll continue using the AsyncOpenAI interface as it's common for many local runners (LM Studio, Ollama).
+        if self.engine_type == "local" and self.light_mode:
+             print(f"[LLM] Entering Light Mode (Potato-friendly). Optimizing for {self.model}")
+
         if not OPENAI_AVAILABLE:
             print("[LLM] openai package not installed")
             return False
